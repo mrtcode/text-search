@@ -50,7 +50,13 @@ function queryWorldcat(str) {
 				try {
 					let title = m[2].match(/(er=brief_results"><strong>)([\s\S]*?)(<\/strong><\/a>)/)[2];
 					let authors = m[2].match(/("author">by )([\s\S]*?)(<\/div><div class="type">)/)[2].split(';').filter(x => x).map(x => x.trim());
-					let publish = m[2].match(/("itemPublisher">)([\s\S]*?)(<\/span><\/div><!-)/)[2];
+					let publish = m[2].match(/("itemPublisher">)([\s\S]*?)(<\/span><\/div><!-)/);
+					if(publish) {
+						publish=publish[2];
+					} else {
+						publish = m[2].match(/(">Publication: )([\s\S]*?)(<\/div><!--)/)[2];
+					}
+					
 					let year = publish.match(/[0-9]{4}/)[0];
 					list.push({
 						title, authors, years: [year]
@@ -123,8 +129,8 @@ function hasAuthor(authors, word) {
 
 function formatItem(item) {
 	let text = item.title;
-	if (item.years) text += ' (' + item.years[0] + ')';
-	if (item.authors) text += ' ' + item.authors.slice(0, 3).join(', ');
+	if (item.years.length) text += ' (' + item.years[0] + ')';
+	if (item.authors) text += ' ' + item.authors.join(', ');
 	return text;
 }
 
@@ -208,7 +214,7 @@ async function searchCrossref(q) {
 
 async function searchWorldcat(query) {
 	let nq = normalize(query);
-	nq = nq.replace(/and/g, '');
+	nq = nq.replace(/ and /ig, '');
 	let nqp = nq.split(' ').filter(x => x);
 	
 	let res2 = await queryWorldcat(query);
@@ -219,7 +225,7 @@ async function searchWorldcat(query) {
 		let title = item.title;
 		
 		title = title.replace(/[:]/g, ' ');
-		title = title.replace(/and/g, '');
+		title = title.replace(/ and /ig, '');
 		
 		let normTitle = normalize(title);
 		
@@ -263,7 +269,7 @@ async function searchWorldcat(query) {
 					}
 					else if (parseInt(rem) == rem && rem.length == 4) {
 						hasNumber = true;
-						if (item.year === rem) {
+						if (item.years.indexOf(rem)>=0) {
 							yearFound = true;
 						}
 						else {
